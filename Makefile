@@ -1,19 +1,21 @@
+NAME=crossword-helper
+
 default: run
 
 build: 
 	docker build -t crossword-helper .
 
 run:
-	docker run -d -p 8080:8080 crossword-helper
+	docker run -d --rm --name ${NAME} -p 8080:8080 crossword-helper
 
 stop:
-	docker stop nifty_wu
+	docker stop ${NAME}
 
 ps:
 	docker ps
 
 shell:
-	docker container exec --interactive --tty nifty_wu sh
+	docker container exec --interactive --tty ${NAME} sh
 
 lsall:
 	docker container ls -a
