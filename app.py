@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import http.server
-import socketserver
 import json
 import re
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs
 
-PORT = 8888
+from flask import Flask, request, jsonify
 
-with open("dictionary", "r") as f:
+PORT = 8080
+
+# Load dictionary relative to this file so it works in Docker too
+DICT_PATH = Path(__file__).with_name("dictionary")
+with open(DICT_PATH, "r") as f:
     WORDS = [line.strip().lower() for line in f if line.strip()]
 
 
@@ -110,7 +111,7 @@ HTML = """<!DOCTYPE html>
       const res = await fetch('/api/search?pattern=' + encodeURIComponent(pattern));
       const words = await res.json();
       countSpan.textContent = words.length + ' words found';
-      resultsDiv.innerHTML = words.length 
+      resultsDiv.innerHTML = words.length
         ? words.map(w => '<span class="word">' + w + '</span>').join('')
         : '<em>No matches found</em>';
     }
@@ -118,30 +119,18 @@ HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
+app = Flask(__name__)
 
-class Handler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        parsed = urlparse(self.path)
-        if parsed.path == "/api/search":
-            params = parse_qs(parsed.query)
-            pattern = params.get("pattern", [""])[0].lower()
-            matches = find_matches(pattern) if pattern else []
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(matches).encode())
-        else:
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html")
-            self.end_headers()
-            self.wfile.write(HTML.encode())
+@app.route("/")
+def index():
+    return HTML
 
-    def log_message(self, format, *args):
-        print(
-            f"{self.address_string()} - [{self.log_date_time_string()}] {format % args}"
-        )
+@app.route("/api/search")
+def api_search():
+    pattern = request.args.get("pattern", "").lower()
+    matches = find_matches(pattern) if pattern else []
+    return jsonify(matches)
 
-
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
+if __name__ == "__main__":
     print(f"Crossword helper running at http://localhost:{PORT}")
-    httpd.serve_forever()
+    app.run(host="0.0.0.0", port=PORT)
