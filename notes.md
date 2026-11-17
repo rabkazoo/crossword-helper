@@ -1,5 +1,5 @@
 ## notes
->
+
 That's done in the docker run command line, not the Dockerfile.
 
 - docker build -t crossword-helper .
@@ -17,5 +17,3 @@ docker run --name crossword-helper -p 8080:8080 crossword-helper
 Or if you want it to auto-remove when stopped:
 
 docker run --rm --name crossword-helper -p 8080:8080 crossword-helper
-
-Nothing in the Dockerfile needs to
